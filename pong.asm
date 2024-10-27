@@ -5,13 +5,11 @@ SetVideMode MACRO
                 mov al,13h
                 int 10h
 ENDM
-
 ResetVideMode MACRO
                   mov ah,0
                   mov al,3h
                   int 10h
 ENDM
-
 
 PressAnyKey MACRO
 
@@ -20,7 +18,6 @@ PressAnyKey MACRO
                 jz  waitKey
 
 ENDM
-
 
 GetSystemTime MACRO
                   mov ah,2ch    ;get the system time
@@ -66,10 +63,6 @@ resetInterruptHandle MACRO
 
                          sti
 ENDM
-
-
-
-
 
 .model small
 .data
@@ -210,6 +203,13 @@ main proc far
     initlize:           
                         SetVideMode
                         setIntteruptHandle                                          ;turn on interrupt flag
+                        mov                  lpMovingDown,0
+                        mov                  rpMovingDown,0
+                        mov                  lpMovingUp,0
+                        mov                  rpMovingUp,0
+                        mov paddle_left_y,80
+                        mov paddle_right_y,80
+
 
                         call                 DrawPaddles                            ;draw paddles for the first time
     mainLoop:           
@@ -599,9 +599,9 @@ printScore proc
 printScore endp
 
 checkWin proc
-                        cmp                  left_score,2
+                        cmp                  left_score,5
                         jge                  setWin
-                        cmp                  right_score,2
+                        cmp                  right_score,5
                         jge                  setWin
                         ret
 
