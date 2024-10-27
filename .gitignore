@@ -1,4 +1,4 @@
-.exe
-.obj
-.conf
-.map
+*.exe
+*.obj
+*.conf
+*.map
