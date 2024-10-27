@@ -73,41 +73,41 @@ ENDM
 
 .model small
 .data
-    time            db  0h                    ;track system time
+    time            db  0h                      ;track system time
     
     WINDOW_WIDTH    equ 320
     WINDOW_HEIGHT   equ 200
     
-    ball_x          dw  155                   ;x position (column) of ball
-    ball_y          dw  96                    ;y position (row) of ball
+    ball_x          dw  155                     ;x position (column) of ball
+    ball_y          dw  96                      ;y position (row) of ball
     
-    ball_home_x     equ 155                   ; x coord of the center of the screen
-    ball_home_y     equ 96                    ; y coord of the center of the screen
+    ball_home_x     equ 155                     ; x coord of the center of the screen
+    ball_home_y     equ 96                      ; y coord of the center of the screen
     
-    ball_width      equ 5h                    ; width of the ball in pixels
-    ball_height     equ 6h                    ; height of the ball in pixels
+    ball_width      equ 5h                      ; width of the ball in pixels
+    ball_height     equ 6h                      ; height of the ball in pixels
         
-    ball_velocity_x dw  5h                    ;ball velocity in the x direction
-    ball_velocity_y dw  2h                    ;ball velocity in the y direction
+    ball_velocity_x dw  5h                      ;ball velocity in the x direction
+    ball_velocity_y dw  2h                      ;ball velocity in the y direction
 
-    paddle_left_y   dw  10                    ;left paddle position for the top of the screen
-    paddle_right_y  dw  10                    ;right paddle position for the top of the screen
+    paddle_left_y   dw  10                      ;left paddle position for the top of the screen
+    paddle_right_y  dw  10                      ;right paddle position for the top of the screen
 
-    paddle_left_x   equ 10                    ;left paddle x coord
-    paddle_right_x  equ 305                   ;right paddle x coord
+    paddle_left_x   equ 10                      ;left paddle x coord
+    paddle_right_x  equ 305                     ;right paddle x coord
 
-    paddle_velocity equ 10                    ;paddle move speed
+    paddle_velocity equ 10                      ;paddle move speed
 
-    paddle_height   equ 40                    ;paddle height
-    paddle_width    equ 5                     ;paddle width
+    paddle_height   equ 40                      ;paddle height
+    paddle_width    equ 5                       ;paddle width
 
-    int9Seg         dw  ?                     ; default interrupt 9 segment
-    int9Off         dw  ?                     ;default interrupt 9 offset
+    int9Seg         dw  ?                       ; default interrupt 9 segment
+    int9Off         dw  ?                       ;default interrupt 9 offset
 
-    lpMovingUp      dw  0                     ;left paddle move state 0 = no movement, -paddle_velocity = move up
-    rpMovingUp      dw  0                     ;right paddle move state 0 = no movement, -paddle_velocity = move up
-    lpMovingDown    dw  0                     ;left paddle move state 0 = no movement, paddle_velocity = move down
-    rpMovingDown    dw  0                     ;right paddle move state 0 = no movement, paddle_velocity = move down
+    lpMovingUp      dw  0                       ;left paddle move state 0 = no movement, -paddle_velocity = move up
+    rpMovingUp      dw  0                       ;right paddle move state 0 = no movement, -paddle_velocity = move up
+    lpMovingDown    dw  0                       ;left paddle move state 0 = no movement, paddle_velocity = move down
+    rpMovingDown    dw  0                       ;right paddle move state 0 = no movement, paddle_velocity = move down
 
     exitFlag        db  0
 
@@ -121,6 +121,9 @@ ENDM
     right_txt       db  "Right Won$"
     r_restart       db  "Restart - R key$"
     esc_exit        db  "Exit - ESC key$"
+    main_menu_txt   db  "Main Menu$"
+    start_txt       db  "Start - Enter key$"
+
 
 
 
@@ -128,7 +131,6 @@ ENDM
 
 .stack 100h
 .code
-
 
 checkKeyboard proc
                         pusha                                                       ;push all regs to the stack
@@ -203,6 +205,7 @@ main proc far
                         mov                  ax,@data
                         mov                  ds,ax
 
+                        call                 MainMenu
 
     initlize:           
                         SetVideMode
@@ -609,44 +612,121 @@ checkWin endp
 DrawGameOver PROC
                         SetVideMode
 
+    ;set cursor postition to top left with a margin of 5
                         mov                  ah,02h
                         mov                  bh,0H
                         mov                  dh,5
                         mov                  dl,5
                         int                  10h
 
+    ;print the game over text
                         lea                  dx,winner_text
                         mov                  ah,9
                         int                  21h
 
-
+    ;move the cursor down
                         mov                  ah,02h
                         mov                  bh,0H
                         mov                  dh,6
                         mov                  dl,5
                         int                  10h
 
+    ;check which player won
                         mov                  al,left_score
                         cmp                  al,right_score
                         jl                   rightWinner
                         lea                  dx,left_txt
-                        jmp                  skipLea
+                        jmp                  leftWinner
     rightWinner:        
                         lea                  dx,right_txt
                        
-    skipLea:            mov                  ah,9
-                        int                  21h
+    leftWinner:         mov                  ah,9
+                        int                  21h                                    ;print the winner
 
+    ;move the cursor down
                         mov                  ah,02h
                         mov                  bh,0H
                         mov                  dh,7
                         mov                  dl,5
                         int                  10h
+    ;print the restart text
+                        lea                  dx,r_restart
+                        mov                  ah,9
+                        int                  21h
+    ;move the cursor down
+                        mov                  ah,02h
+                        mov                  bh,0H
+                        mov                  dh,8
+                        mov                  dl,5
+                        int                  10h
+    ;print the esc text
+                        lea                  dx,esc_exit
+                        mov                  ah,9
+                        int                  21h
 
-
-                        mov                  ah, 0
+    ;wait for ESC key or R key
+    waitKeyInput:       mov                  ah, 0
                         int                  16h
+
+                        cmp                  ah,01h
+                        jne                  skipExit1
+                        mov                  exitFlag,1
+                        ret
+    skipExit1:          
+                        cmp                  ah,13h
+                        jne                  waitKeyInput
                         ret
 DrawGameOver ENDP
+
+MainMenu PROC
+                        SetVideMode
+    ;set cursor postition to top left with a margin of 5
+                        mov                  ah,02h
+                        mov                  bh,0H
+                        mov                  dh,5
+                        mov                  dl,5
+                        int                  10h
+
+    ;print the main menu text
+                        lea                  dx,main_menu_txt
+                        mov                  ah,9
+                        int                  21h
+
+    ;move the cursor down
+                        mov                  ah,02h
+                        mov                  bh,0H
+                        mov                  dh,6
+                        mov                  dl,5
+                        int                  10h
+
+    ;print the Start text
+                        lea                  dx,start_txt
+                        mov                  ah,9
+                        int                  21h
+
+    ;move the cursor down
+                        mov                  ah,02h
+                        mov                  bh,0H
+                        mov                  dh,7
+                        mov                  dl,5
+                        int                  10h
+    ;print the esc text
+                        lea                  dx,esc_exit
+                        mov                  ah,9
+                        int                  21h
+
+    ;wait for ESC key or Enter key
+    waitKeyInput2:      mov                  ah, 0
+                        int                  16h
+
+                        cmp                  ah,01h
+                        jne                  skipExit2
+                        mov                  exitFlag,1
+                        ret
+    skipExit2:          
+                        cmp                  ah,1Ch
+                        jne                  waitKeyInput2
+                        ret
+MainMenu ENDP
 
 end main
