@@ -117,11 +117,6 @@ ENDM
     main_menu_txt   db  "Main Menu$"
     start_txt       db  "Start - Enter key$"
 
-
-
-
-
-
 .stack 100h
 .code
 
@@ -207,8 +202,8 @@ main proc far
                         mov                  rpMovingDown,0
                         mov                  lpMovingUp,0
                         mov                  rpMovingUp,0
-                        mov paddle_left_y,80
-                        mov paddle_right_y,80
+                        mov                  paddle_left_y,80
+                        mov                  paddle_right_y,80
 
 
                         call                 DrawPaddles                            ;draw paddles for the first time
